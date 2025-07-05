@@ -1,3 +1,88 @@
+// Cookie utility functions for chat history persistence
+function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`;
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+    }
+    return null;
+}
+
+// Utility function to scroll chat to bottom
+function scrollChatToBottom() {
+    const scrollContainer = document.querySelector('.aiScroll');
+    if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    }
+}
+
+function saveChatHistory() {
+    const chatHistory = document.getElementById("chatHistory");
+    if (!chatHistory) return;
+    
+    const messages = Array.from(chatHistory.children).map(message => {
+        const isUserMessage = message.classList.contains("user-message");
+        const isTypingIndicator = message.id === "ai-typing-indicator";
+        const isLoadingAnimation = message.classList.contains("loading-animation");
+        const isErrorMessage = message.classList.contains("error-message");
+        const isErrorTrigger = message.hasAttribute("data-error-trigger");
+        
+        // Skip typing indicators, loading animations, error messages, and messages that triggered errors
+        if (isTypingIndicator || isLoadingAnimation || isErrorMessage || isErrorTrigger) return null;
+        
+        // Check if this is an AI response with error content
+        const content = message.textContent.trim();
+        const hasErrorContent = content.includes("⚠️") || content.includes("❌") || content.includes("🌐") || 
+                               content.includes("API rate limit") || content.includes("Netwerkfout") || 
+                               content.includes("Er is iets misgegaan");
+        
+        if (hasErrorContent) return null;
+        
+        return {
+            type: isUserMessage ? "user" : "ai",
+            content: content,
+            html: message.innerHTML
+        };
+    }).filter(msg => msg !== null);
+    
+    // Save to cookie (limit to last 20 messages to avoid cookie size issues)
+    const recentMessages = messages.slice(-20);
+    setCookie('chatHistory', JSON.stringify(recentMessages), 7); // 7 days
+}
+
+function loadChatHistory() {
+    const chatHistory = document.getElementById("chatHistory");
+    if (!chatHistory) return;
+    
+    const savedHistory = getCookie('chatHistory');
+    if (!savedHistory) return;
+    
+    try {
+        const messages = JSON.parse(savedHistory);
+        chatHistory.innerHTML = ''; // Clear existing history
+        
+        messages.forEach(msg => {
+            const messageElement = document.createElement("div");
+            messageElement.className = msg.type === "user" ? "chat-bubble user-message" : "chat-bubble ai-response";
+            messageElement.innerHTML = msg.html;
+            chatHistory.appendChild(messageElement);
+        });
+        
+        // Scroll to bottom - use the correct scrollable container
+        scrollChatToBottom();
+    } catch (error) {
+        console.error('Error loading chat history:', error);
+    }
+}
+
 // Function to parse Markdown-like syntax
 function parseMarkdown(text) {
     // Replace *text* with <strong>text</strong> for bold
@@ -17,10 +102,13 @@ async function askMistral(userMessage) {
         return;
     }
 
-    // ⏳ Disable input and update the button
-    inputBox.readOnly = true;
+    // Clean up any previous error messages when starting a new conversation
+    cleanupErrorMessages();
+
+    // ⏳ Disable sending (but allow typing) and update the button
+    inputBox.readOnly = false; // Keep input enabled for typing
     sendButton.innerText = "Genereren...";
-    sendButton.disabled = true;
+    sendButton.disabled = true; // Disable send button only
 
     // Append user message to chat history
     const userMessageElement = document.createElement("div");
@@ -29,7 +117,7 @@ async function askMistral(userMessage) {
     chatHistory.appendChild(userMessageElement);
 
     // Scroll to the bottom after user message is added
-    chatHistory.scrollTop = chatHistory.scrollHeight;
+    scrollChatToBottom();
 
     // Add loading animation for AI response
     const loadingElement = document.createElement("div");
@@ -42,7 +130,17 @@ async function askMistral(userMessage) {
     chatHistory.appendChild(loadingElement);
 
     // Scroll to the bottom after loading animation is added
-    chatHistory.scrollTop = chatHistory.scrollHeight;
+    scrollChatToBottom();
+
+    // Load website content summary
+    let websiteContent = '';
+    try {
+        const response = await fetch('../data/website_content_summary.txt');
+        websiteContent = await response.text();
+    } catch (error) {
+        console.log('Could not load website content summary:', error);
+        websiteContent = 'Je bent een AI assistent voor GTI Beveren, richting Applicatie- en Databeheer (5ADB). Antwoord altijd in het Nederlands.';
+    }
 
     // Collect the full chat history
     const chatMessages = Array.from(chatHistory.children)
@@ -53,68 +151,206 @@ async function askMistral(userMessage) {
         })
         .join("\n");
 
+    // Function to make API request with retry logic
+    const makeApiRequest = async (retryCount = 0) => {
+        try {
+            const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer HSLCZmOYODm8hW0fAfz2TdIYSpdMZYdw" // 🔴 Replace with a secure method!
+                },
+                body: JSON.stringify({
+                    model: "mistral-large-2411",
+                    stream: true, // Enable streaming
+                    messages: [
+                        { role: "system", content: "Antwoord altijd in het Nederlands." },
+                        { role: "system", content: "Je bent een AI assistent voor GTI Beveren, richting Applicatie- en Databeheer (5ADB). Antwoord altijd vriendelijk en behulpzaam, maar houd je antwoorden kort en gericht. Gebruik de onderstaande informatie om vragen te beantwoorden:" },
+                        { role: "system", content: websiteContent },
+                        { role: "system", content: "Belangrijke regels: (1) Antwoord altijd in het Nederlands. (2) Houd antwoorden kort en gericht - lange antwoorden zijn saai voor gebruikers. (3) Gebruik alleen de informatie uit de website content summary. (4) Vertel altijd alles in je eigen woorden. (5) De vragen komen van leerlingen/toekomstige leerlingen van GTI Beveren." },
+                        { role: "system", content: "Chat-History:\n" + chatMessages },
+                        { role: "user", content: userMessage }
+
+                    ],
+                })
+            });
+
+            // Handle rate limiting (429 error)
+            if (response.status === 429) {
+                if (retryCount < 3) { // Max 3 retries
+                    const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
+                    console.log(`Rate limited. Retrying in ${delay/1000} seconds...`);
+                    
+                    // Update loading message to show retry
+                    if (chatHistory.contains(loadingElement)) {
+                        // Clear the loading element and add retry message
+                        loadingElement.innerHTML = '';
+                        loadingElement.className = "chat-bubble ai-response";
+                        loadingElement.textContent = `⏳ Rate limit bereikt. Opnieuw proberen in ${delay/1000} seconden...`;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return makeApiRequest(retryCount + 1);
+                } else {
+                    throw new Error('Rate limit exceeded. Please try again later.');
+                }
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return response;
+        } catch (error) {
+            if (retryCount < 3 && (error.name === 'TypeError' || error.message.includes('fetch'))) {
+                const delay = Math.pow(2, retryCount) * 1000;
+                console.log(`Network error. Retrying in ${delay/1000} seconds...`);
+                
+                // Update loading message to show network retry
+                if (chatHistory.contains(loadingElement)) {
+                    loadingElement.innerHTML = '';
+                    loadingElement.className = "chat-bubble ai-response";
+                    loadingElement.textContent = `🌐 Netwerkfout. Opnieuw proberen in ${delay/1000} seconden...`;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return makeApiRequest(retryCount + 1);
+            }
+            throw error;
+        }
+    };
+
     try {
-        const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer HSLCZmOYODm8hW0fAfz2TdIYSpdMZYdw" // 🔴 Replace with a secure method!
-            },
-            body: JSON.stringify({
-                model: "mistral-large-2411",
-                messages: [
-                    { role: "system", content: "Deze website is gemaakt door de volgende leerlingen van 5ADB: Alexander Brands, Robbe Ghyssaert, Tommy Banasiak, Jason Van Landeghem, Clément Vercauteren, Matisse De Keersmaeker en Jorne Duym.(Altijd uitleggen in eigen woorden)" }, // Ensure Dutch responses
-                    { role: "system", content: "Over 5ADB: Applicatie- en Databeheer (ADB) - GTI Beveren is een technische opleiding binnen de dubbele finaliteit, gericht op software- en hardwareaspecten van informatica. De richting combineert theoretische kennis met praktische vaardigheden, zodat leerlingen een grondig inzicht krijgen in de IT-wereld. Leerinhoud: Applicaties analyseren, programmeren en testen: ontwikkelen van softwaretoepassingen en zorgen voor optimale werking. Databanken ontwerpen en beheren: creëren en onderhouden van databases voor efficiënte dataopslag en -opvraging. Websites ontwerpen en programmeren: gebruiksvriendelijke en functionele websites ontwerpen, inclusief koppeling aan databanken. Computersystemen begrijpen: inzicht krijgen in de opbouw en werking van computersystemen. Netwerken uittekenen en configureren: leren ontwerpen en configureren van computernetwerken. Leerlingenprofiel: geschikt voor leerlingen met interesse in informatica en ICT, die eigen programma's willen ontwikkelen en ICT-problemen als uitdagingen zien, theorie direct in de praktijk willen toepassen, gedisciplineerd en gemotiveerd zijn om theoretische vakken grondig te bestuderen en bereid zijn om in het zesde jaar, met begeleiding van een leerkracht-coach, een geïntegreerd eindproject te ontwikkelen. Lessentabel: De opleiding bestaat uit basisvorming en specifieke vakken. Basisvorming omvat Aardrijkskunde, Engels, Frans, Geschiedenis, Levensbeschouwelijk vak, Lichamelijke opvoeding, Nederlands, Wiskunde, Natuurwetenschappen en Economie. Specifieke vakken omvatten Toegepaste Informatica en Informaticawetenschappen. Stage: In het zesde jaar wordt een stage van vier weken georganiseerd in de tweede helft van het schooljaar. Na het 6de jaar: Na het afronden van Applicatie- en Databeheer bezit je een diploma secundair onderwijs en de beroepskwalificatie van functioneel digitaal ondersteuner. Je kunt doorstromen naar een bacheloropleiding in informatica of multimedia, een andere professionele bachelor volgen, kiezen voor een graduaatsopleiding of meteen de arbeidsmarkt betreden. Elk pad leidt naar een toekomst waarin digitale vaardigheden essentieel zijn. Voor meer gedetailleerde informatie over de lessentabel en vakinhoud: GTI Beveren - Applicatie- en Databeheer.(Altijd uitleggen in eigen woorden)" }, // Ensure Dutch responses
-                    { role: "system", content: "Lessenpakket: Wat is Applicatie en Databeheer? De richting Applicatie en Databeheer richt zich op het ontwikkelen, beheren en optimaliseren van applicaties en databanken. Studenten leren onder andere programmeren, databasebeheer en hoe applicaties werken binnen een bedrijf, met focus op het efficiënt beheren van data en het bouwen van softwareoplossingen. Lessenpakket ADB (Applicatie en Databeheer): Basisvorming 5de jaar - Aardrijkskunde: 1, Engels: 2, Frans: 3, Geschiedenis: 1, Levensbeschouwelijk vak: 2, Lichamelijke opvoeding: 2, Nederlands: 2, Wiskunde: 3, Natuurwetenschappen: 1, Economie: 0. Specifiek gedeelte - Webdesign: 4, Computersystemen en netwerken: 4, Applicatiebeheer: 2, Programmeren en databeheer: 8. Stages - Stage: 0. Basisvorming 6de jaar - Aardrijkskunde: 1, Engels: 2, Frans: 3, Geschiedenis: 1, Levensbeschouwelijk vak: 2, Lichamelijke opvoeding: 2, Nederlands: 2, Wiskunde: 2, Natuurwetenschappen: 1, Economie: 1. Specifiek gedeelte - Webdesign: 4, Computersystemen en netwerken: 4, Applicatiebeheer: 2, Programmeren en databeheer: 8. Stages - Stage: 2. Bij stages staat het cijfer voor het aantal weken dat de lessen worden opgeschort omwille van een voltijds project i.s.m. het bedrijfsleven. Wat na Applicatie en Databeheer? Na het behalen van je diploma Applicatie en Databeheer kan je verschillende richtingen uit. Je kan ervoor kiezen om verder te studeren in het hoger onderwijs, bijvoorbeeld een professionele bachelor Informatica, Toegepaste Informatica of Multimedia en Communicatietechnologie. Daarnaast kan je ook aan de slag in het bedrijfsleven, bijvoorbeeld als webdeveloper, systeembeheerder of IT-consultant. Met je kennis van applicaties en databanken kan je een belangrijke rol spelen in het optimaliseren van bedrijfsprocessen en het ontwikkelen van softwareoplossingen. (Leg dit altijd uit in eigen woorden)" }, // Ensure Dutch responses
-                    { role: "system", content: "de vragen die worden gesteld zijn altijd door leerlingen/toekomstige leerlingen van de school GTIbeveren (Gemeentelijk Technisch Instituut Beveren), de richting waarvoor jij gebruikt word is ADB (Applicatie- en Data- Beheer). de richting specifieke vakken bevatten: Applicatie beheer (Leren werken met bepaald applicaties), Programmeren en Databeheer (Leren programeren in C# en later in het jaar databases maken en aanspreken), Webdesign(Websites leren maken op basis van HTML, CSS en hier en daar een heel klein beetje Js) en computer systemen (de werking van computers leren op hardware niveau en ook op software niveau met bijhoerende praktijk opdrachten). Deze informatie mag alleen gegeven worden als er achter gevraagd word. Als de vraag gaat over gegeven informatie antwoord dan zo gericht mogenlijk. antwoord nooit met een te lang antwoord, dit is saai voor de gebruiker en dan gebruiken ze jou niet meer." }, // Ensure the context
-                    { role: "system", content: "Antwoord altijd in het Nederlands." }, // Ensure Dutch responses
-                    { role: "system", content: "Chat-History:\n" + chatMessages },
-                    { role: "user", content: userMessage }
-
-                ],
-            })
-        });
-
-        const data = await response.json();
-        console.log(data); // Debugging
+        const response = await makeApiRequest();
 
         // Remove loading animation
         chatHistory.removeChild(loadingElement);
-
+        
+        // Create a separate typing indicator that stays visible during entire generation
+        const typingIndicator = document.createElement("div");
+        typingIndicator.id = "ai-typing-indicator";
+        typingIndicator.className = "typing-indicator";
+        typingIndicator.innerHTML = "🤖 AI is typing...";
+        chatHistory.appendChild(typingIndicator);
+        
+        // Create AI response element (empty at first)
         const aiResponseElement = document.createElement("div");
         aiResponseElement.className = "chat-bubble ai-response";
+        aiResponseElement.innerHTML = ""; // Start empty
+        chatHistory.appendChild(aiResponseElement);
+        
+        // Scroll to the bottom
+        scrollChatToBottom();
 
-        if (data.choices) {
-            // Parse the AI's response for Markdown-like syntax
-            aiResponseElement.innerHTML = parseMarkdown(data.choices[0].message.content);
-        } else {
-            aiResponseElement.textContent = "Error: Invalid response from API.";
+        // Handle streaming response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullResponse = "";
+        let isFirstChunk = true;
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6).trim();
+                    if (data === '[DONE]') {
+                        break;
+                    }
+
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (parsed.choices && parsed.choices[0].delta && parsed.choices[0].delta.content) {
+                            const content = parsed.choices[0].delta.content;
+                            fullResponse += content;
+                            
+                            // Update the AI response element with streaming content
+                            aiResponseElement.innerHTML = parseMarkdown(fullResponse);
+                            
+                            // Auto-scroll to bottom to follow the streaming text
+                            scrollChatToBottom();
+                        }
+                    } catch (e) {
+                        // Skip invalid JSON lines
+                        continue;
+                    }
+                }
+            }
         }
 
-        chatHistory.appendChild(aiResponseElement);
+        // Final update with complete response
+        aiResponseElement.innerHTML = parseMarkdown(fullResponse);
+        
+        // Final scroll to bottom
+        scrollChatToBottom();
+        
+        // Remove the typing indicator now that AI is done
+        const typingIndicatorElement = document.getElementById("ai-typing-indicator");
+        if (typingIndicatorElement) {
+            typingIndicatorElement.remove();
+        }
 
-        // No scrolling here for AI response
+        // Save chat history to cookie
+        saveChatHistory();
+
     } catch (error) {
         console.error("API Error:", error);
 
-        // Remove loading animation
-        chatHistory.removeChild(loadingElement);
+        // Remove loading animation if it still exists
+        if (chatHistory.contains(loadingElement)) {
+            chatHistory.removeChild(loadingElement);
+        }
 
         const errorResponseElement = document.createElement("div");
-        errorResponseElement.className = "chat-bubble ai-response";
-        errorResponseElement.textContent = "API request failed. Check console.";
+        errorResponseElement.className = "chat-bubble ai-response error-message";
+        
+        // Provide user-friendly error messages
+        if (error.message.includes('Rate limit exceeded')) {
+            errorResponseElement.textContent = "⚠️ Te veel verzoeken op dit moment. Probeer het over een paar minuten opnieuw.";
+        } else if (error.message.includes('HTTP error! status: 429')) {
+            errorResponseElement.textContent = "⚠️ API rate limit bereikt. Wacht even voordat je een nieuwe vraag stelt.";
+        } else if (error.message.includes('fetch') || error.name === 'TypeError') {
+            errorResponseElement.textContent = "🌐 Netwerkfout. Controleer je internetverbinding en probeer opnieuw.";
+        } else {
+            errorResponseElement.textContent = "❌ Er is iets misgegaan. Probeer het opnieuw.";
+        }
+        
+        // Mark the user message that triggered this error
+        userMessageElement.setAttribute("data-error-trigger", "true");
+        
         chatHistory.appendChild(errorResponseElement);
+        
+        // Scroll to bottom
+        scrollChatToBottom();
+        
+        // Remove the typing indicator if there's an error
+        const typingIndicatorElement = document.getElementById("ai-typing-indicator");
+        if (typingIndicatorElement) {
+            typingIndicatorElement.remove();
+        }
+
+        // Don't save chat history when there's an error
     }
 
-    // ✅ Reset the UI after the response
-    inputBox.readOnly = false;
+    // ✅ Reset the UI after the response (re-enable sending)
+    inputBox.readOnly = false; // Keep input enabled
     sendButton.innerText = "Send";
-    sendButton.disabled = false;
+    sendButton.disabled = false; // Re-enable send button
 }
 
-// Modify sendClicked to remove sound
+// Modify sendClicked to prevent sending while AI is generating
 function sendClicked(userInput) {
     if (!userInput.trim()) return;
+    
+    // Check if send button is disabled (AI is generating)
+    const sendButton = document.getElementById("send-button");
+    if (sendButton.disabled) {
+        return; // Don't send if AI is still generating
+    }
 
     askMistral(userInput);
 
@@ -125,6 +361,13 @@ function sendClicked(userInput) {
 function handleKeyPress(event) {
     if (event.key === "Enter") {
         event.preventDefault();
+        
+        // Check if send button is disabled (AI is generating)
+        const sendButton = document.getElementById("send-button");
+        if (sendButton.disabled) {
+            return; // Don't send if AI is still generating
+        }
+        
         sendClicked(document.getElementById("userInput").value);
     }
 }
@@ -174,7 +417,14 @@ function openModal() {
     // Hide the tooltip if the chat is opened
     hideTooltip();
 
-    if (!hasPrompted) {
+    // Load chat history from cookies
+    loadChatHistory();
+
+    // Check if there's any existing chat history
+    const chatHistory = document.getElementById("chatHistory");
+    const hasExistingHistory = chatHistory.children.length > 0;
+
+    if (!hasPrompted && !hasExistingHistory) {
         let promptMessage = "Stel jezelf kort voor en vertel mij heel kort over de richting Applicatie- en Data-beheer in GTI Beveren.";
         askMistral(promptMessage);
         hasPrompted = true; // Set the flag to true after the first prompt
@@ -188,4 +438,29 @@ function closeModal() {
 }
 
 // Call the tooltip function when the page loads
-window.onload = showTooltip;
+window.onload = () => {
+    showTooltip();
+    // Chat history will be loaded when modal opens
+};
+
+function clearChatHistory() {
+    const chatHistory = document.getElementById("chatHistory");
+    if (chatHistory) {
+        chatHistory.innerHTML = '';
+        setCookie('chatHistory', '', -1); // Delete the cookie
+        hasPrompted = false; // Reset the prompt flag
+    }
+}
+
+function cleanupErrorMessages() {
+    const chatHistory = document.getElementById("chatHistory");
+    if (!chatHistory) return;
+    
+    const errorMessages = chatHistory.querySelectorAll('.error-message');
+    const errorTriggers = chatHistory.querySelectorAll('[data-error-trigger]');
+    
+    errorMessages.forEach(msg => msg.remove());
+    errorTriggers.forEach(msg => {
+        msg.removeAttribute('data-error-trigger');
+    });
+}
