@@ -1,3 +1,88 @@
+// Cookie utility functions for chat history persistence
+function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`;
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+    }
+    return null;
+}
+
+// Utility function to scroll chat to bottom
+function scrollChatToBottom() {
+    const scrollContainer = document.querySelector('.aiScroll');
+    if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    }
+}
+
+function saveChatHistory() {
+    const chatHistory = document.getElementById("chatHistory");
+    if (!chatHistory) return;
+    
+    const messages = Array.from(chatHistory.children).map(message => {
+        const isUserMessage = message.classList.contains("user-message");
+        const isTypingIndicator = message.id === "ai-typing-indicator";
+        const isLoadingAnimation = message.classList.contains("loading-animation");
+        const isErrorMessage = message.classList.contains("error-message");
+        const isErrorTrigger = message.hasAttribute("data-error-trigger");
+        
+        // Skip typing indicators, loading animations, error messages, and messages that triggered errors
+        if (isTypingIndicator || isLoadingAnimation || isErrorMessage || isErrorTrigger) return null;
+        
+        // Check if this is an AI response with error content
+        const content = message.textContent.trim();
+        const hasErrorContent = content.includes("⚠️") || content.includes("❌") || content.includes("🌐") || 
+                               content.includes("API rate limit") || content.includes("Netwerkfout") || 
+                               content.includes("Er is iets misgegaan");
+        
+        if (hasErrorContent) return null;
+        
+        return {
+            type: isUserMessage ? "user" : "ai",
+            content: content,
+            html: message.innerHTML
+        };
+    }).filter(msg => msg !== null);
+    
+    // Save to cookie (limit to last 20 messages to avoid cookie size issues)
+    const recentMessages = messages.slice(-20);
+    setCookie('chatHistory', JSON.stringify(recentMessages), 7); // 7 days
+}
+
+function loadChatHistory() {
+    const chatHistory = document.getElementById("chatHistory");
+    if (!chatHistory) return;
+    
+    const savedHistory = getCookie('chatHistory');
+    if (!savedHistory) return;
+    
+    try {
+        const messages = JSON.parse(savedHistory);
+        chatHistory.innerHTML = ''; // Clear existing history
+        
+        messages.forEach(msg => {
+            const messageElement = document.createElement("div");
+            messageElement.className = msg.type === "user" ? "chat-bubble user-message" : "chat-bubble ai-response";
+            messageElement.innerHTML = msg.html;
+            chatHistory.appendChild(messageElement);
+        });
+        
+        // Scroll to bottom - use the correct scrollable container
+        scrollChatToBottom();
+    } catch (error) {
+        console.error('Error loading chat history:', error);
+    }
+}
+
 // Function to parse Markdown-like syntax
 function parseMarkdown(text) {
     // Replace *text* with <strong>text</strong> for bold
@@ -17,6 +102,9 @@ async function askMistral(userMessage) {
         return;
     }
 
+    // Clean up any previous error messages when starting a new conversation
+    cleanupErrorMessages();
+
     // ⏳ Disable sending (but allow typing) and update the button
     inputBox.readOnly = false; // Keep input enabled for typing
     sendButton.innerText = "Genereren...";
@@ -29,7 +117,7 @@ async function askMistral(userMessage) {
     chatHistory.appendChild(userMessageElement);
 
     // Scroll to the bottom after user message is added
-    chatHistory.scrollTop = chatHistory.scrollHeight;
+    scrollChatToBottom();
 
     // Add loading animation for AI response
     const loadingElement = document.createElement("div");
@@ -42,7 +130,7 @@ async function askMistral(userMessage) {
     chatHistory.appendChild(loadingElement);
 
     // Scroll to the bottom after loading animation is added
-    chatHistory.scrollTop = chatHistory.scrollHeight;
+    scrollChatToBottom();
 
     // Load website content summary
     let websiteContent = '';
@@ -150,7 +238,9 @@ async function askMistral(userMessage) {
         aiResponseElement.className = "chat-bubble ai-response";
         aiResponseElement.innerHTML = ""; // Start empty
         chatHistory.appendChild(aiResponseElement);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
+        
+        // Scroll to the bottom
+        scrollChatToBottom();
 
         // Handle streaming response
         const reader = response.body.getReader();
@@ -182,7 +272,7 @@ async function askMistral(userMessage) {
                             aiResponseElement.innerHTML = parseMarkdown(fullResponse);
                             
                             // Auto-scroll to bottom to follow the streaming text
-                            chatHistory.scrollTop = chatHistory.scrollHeight;
+                            scrollChatToBottom();
                         }
                     } catch (e) {
                         // Skip invalid JSON lines
@@ -194,13 +284,18 @@ async function askMistral(userMessage) {
 
         // Final update with complete response
         aiResponseElement.innerHTML = parseMarkdown(fullResponse);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
+        
+        // Final scroll to bottom
+        scrollChatToBottom();
         
         // Remove the typing indicator now that AI is done
         const typingIndicatorElement = document.getElementById("ai-typing-indicator");
         if (typingIndicatorElement) {
             typingIndicatorElement.remove();
         }
+
+        // Save chat history to cookie
+        saveChatHistory();
 
     } catch (error) {
         console.error("API Error:", error);
@@ -211,7 +306,7 @@ async function askMistral(userMessage) {
         }
 
         const errorResponseElement = document.createElement("div");
-        errorResponseElement.className = "chat-bubble ai-response";
+        errorResponseElement.className = "chat-bubble ai-response error-message";
         
         // Provide user-friendly error messages
         if (error.message.includes('Rate limit exceeded')) {
@@ -224,14 +319,21 @@ async function askMistral(userMessage) {
             errorResponseElement.textContent = "❌ Er is iets misgegaan. Probeer het opnieuw.";
         }
         
+        // Mark the user message that triggered this error
+        userMessageElement.setAttribute("data-error-trigger", "true");
+        
         chatHistory.appendChild(errorResponseElement);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
+        
+        // Scroll to bottom
+        scrollChatToBottom();
         
         // Remove the typing indicator if there's an error
         const typingIndicatorElement = document.getElementById("ai-typing-indicator");
         if (typingIndicatorElement) {
             typingIndicatorElement.remove();
         }
+
+        // Don't save chat history when there's an error
     }
 
     // ✅ Reset the UI after the response (re-enable sending)
@@ -315,7 +417,14 @@ function openModal() {
     // Hide the tooltip if the chat is opened
     hideTooltip();
 
-    if (!hasPrompted) {
+    // Load chat history from cookies
+    loadChatHistory();
+
+    // Check if there's any existing chat history
+    const chatHistory = document.getElementById("chatHistory");
+    const hasExistingHistory = chatHistory.children.length > 0;
+
+    if (!hasPrompted && !hasExistingHistory) {
         let promptMessage = "Stel jezelf kort voor en vertel mij heel kort over de richting Applicatie- en Data-beheer in GTI Beveren.";
         askMistral(promptMessage);
         hasPrompted = true; // Set the flag to true after the first prompt
@@ -329,4 +438,29 @@ function closeModal() {
 }
 
 // Call the tooltip function when the page loads
-window.onload = showTooltip;
+window.onload = () => {
+    showTooltip();
+    // Chat history will be loaded when modal opens
+};
+
+function clearChatHistory() {
+    const chatHistory = document.getElementById("chatHistory");
+    if (chatHistory) {
+        chatHistory.innerHTML = '';
+        setCookie('chatHistory', '', -1); // Delete the cookie
+        hasPrompted = false; // Reset the prompt flag
+    }
+}
+
+function cleanupErrorMessages() {
+    const chatHistory = document.getElementById("chatHistory");
+    if (!chatHistory) return;
+    
+    const errorMessages = chatHistory.querySelectorAll('.error-message');
+    const errorTriggers = chatHistory.querySelectorAll('[data-error-trigger]');
+    
+    errorMessages.forEach(msg => msg.remove());
+    errorTriggers.forEach(msg => {
+        msg.removeAttribute('data-error-trigger');
+    });
+}

@@ -3,6 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Wat na 5ADB? Ontdek vervolgmogelijkheden na Applicatie- en Databeheer in GTI Beveren."
+    />
+    <meta name="author" content="Groep B" />
+    <meta
+      name="keywords"
+      content="5ADB, GTI Beveren, Applicatie- en Databeheer, Vervolgstudies, Carrière, Jobs, Hoger Onderwijs"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <link rel="icon" href="../images/favicon_Beveren.png" type="image/x-icon" />
     <link rel="stylesheet" href="../css/Watna.css" />
     <link rel="stylesheet" href="../css/components/navbar.css" />
     <link rel="stylesheet" href="../css/main.css" />
@@ -11,29 +23,25 @@
       rel="stylesheet"
       href="../css/components/achtergrond-scroll-about.css"
     />
-    <title>Document</title>
+    <title>Wat na 5ADB - GTI Beveren</title>
   </head>
   <body>
     <div id="navbar" class="navbar">
-      <a href="/src/pages/home.html"><h2 class="titel">5ADB</h2></a>
+      <a href="../pages/home.html"><h2 class="titel">5ADB</h2></a>
       <!-- The hamburger menu will be added via JavaScript -->
       <nav>
-        <a href="/src/pages/Lessenpakket.html">Lessenpakket</a>
-        <a href="/src/pages/Foto.html">Foto's</a>
-        <a href="/src/pages/About.html">Over ADB</a>
-        <a href="/src/pages/Watna.html">Wat na 5ADB</a>
-        <a href="/src/pages/overAI.html">Over AI</a>
-        <a href="/src/pages/formulier.html">Formulier</a>
+        <a href="../pages/Lessenpakket.html">Lessenpakket</a>
+        <a href="../pages/Foto.html">Foto's</a>
+        <a href="../pages/About.html">Over ADB</a>
+        <a href="../pages/Watna.html">Wat na 5ADB</a>
+        <a href="../pages/overAI.html">Over AI</a>
+        <a href="../pages/formulier.html">Formulier</a>
       </nav>
-      <script src="/src/js/navbar.js"></script>
+      <script src="../js/navbar.js"></script>
     </div>
     <main class="ler">
-      <div class="froto" style="position: absolute; top: 0; left: 0; width: 100%; height: 50vh; background-image: url(/images/AdobeStock_960799808.jpeg); background-position: center; background-repeat: no-repeat; background-size: cover; z-index: 1;"></div>
+      <div class="froto" style="position: absolute; top: 0; left: 0; width: 100%; height: 50vh; background-image: url(../../images/AdobeStock_960799808.jpeg); background-position: center; background-repeat: no-repeat; background-size: cover; z-index: 1;"></div>
       
-  
-        <script src="../js/ai.js"></script>
-        <!-- Link to external JavaScript file -->
-      </div>
       <div class="about" style="position: relative; margin-top: 50vh; z-index: 2;">
       <header>
         <h1>Wat Na Applicatie- en Databeheer (ADB) - GTI Beveren</h1>
@@ -62,7 +70,7 @@
           </div>
         </div>
         <div class="column column-2">
-          <img src="/images/c58a4281-6e46-4448-a689-d3fc2913e13e.png" alt="Student aan computer" loading="lazy" />
+          <img src="../../images/c58a4281-6e46-4448-a689-d3fc2913e13e.png" alt="Student aan computer" loading="lazy" />
         </div>
       </section>
 
@@ -108,7 +116,7 @@
           </div>
         </div>
         <div class="column column-2">
-          <img src="/images/AdobeStock_910089031.jpeg" alt="Computernetwerken" loading="lazy" />
+          <img src="../../images/AdobeStock_910089031.jpeg" alt="Computernetwerken" loading="lazy" />
         </div>
       </section>
 
@@ -184,57 +192,61 @@
         </div>
       </section>
 
-      
-    </div>
+      </div>
+    </main>
     
-      <div class="ai">
-        <!-- Tooltip for AI assistant -->
-        <div id="aiTooltip" class="tooltip">
-          <span class="tooltip-text">Er is een AI-assistent beschikbaar! Klik hier om te starten.</span>
-          <button class="tooltip-close" onclick="hideTooltip()">×</button>
-        </div>
-  
-        <!-- Button to open the chatbot modal -->
-        <button onclick="openModal()" class="open-button" title="Chat with Mistral AI!">
-          <img src="../images/ai/comment-02-stroke-rounded.svg" alt="Chat Icon" />
-        </button>
-  
-        <!-- Background overlay (covers the page) -->
-        <div id="overlay" class="overlay" onclick="closeModal()"></div>
-  
-        <!-- The Modal -->
-        <div id="chatModal" class="modal">
-          <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <img
-              src="../images/ai/LOGO white.png"
-              alt="Mistral AI"
-              class="chatbot-image"
+    <!-- AI implementation -->
+    <div class="ai">
+      <!-- Tooltip for AI assistant -->
+      <div id="aiTooltip" class="tooltip">
+        <span class="tooltip-text">Er is een AI-assistent beschikbaar! Klik hier om te starten.</span>
+        <button class="tooltip-close" onclick="hideTooltip()">×</button>
+      </div>
+
+      <!-- Button to open the chatbot modal -->
+      <button onclick="openModal()" class="open-button" title="Chat with Mistral AI!">
+        <img src="../images/ai/comment-02-stroke-rounded.svg" alt="Chat Icon" />
+      </button>
+
+      <!-- Background overlay (covers the page) -->
+      <div id="overlay" class="overlay" onclick="closeModal()"></div>
+
+      <!-- The Modal -->
+      <div id="chatModal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeModal()">&times;</span>
+          <img
+            src="../images/ai/LOGO white.png"
+            alt="Mistral AI"
+            class="chatbot-image"
+          />
+          <h2 class="title">Chatbot</h2>
+          <div class="aiScroll">
+            <div id="chatHistory" class="chat-history"></div>
+          </div>
+          <hr />
+          <div class="flex">
+            <input
+              type="text"
+              id="userInput"
+              placeholder="Stel een vraag"
+              onkeydown="handleKeyPress(event)"
+              class="user-input"
             />
-            <h2 class="title">Chatbot</h2>
-            <div class="aiScroll">
-              <div id="chatHistory" class="chat-history"></div>
-            </div>
-            <hr />
-            <div class="flex">
-              <input
-                type="text"
-                id="userInput"
-                placeholder="Stel een vraag"
-                onkeydown="handleKeyPress(event)"
-                class="user-input"
-              />
-              <button
-                id="send-button"
-                onclick="sendClicked(document.getElementById('userInput').value)"
-                class="send-button"
-              >
-                Verstuur
-              </button>
-            </div>
+            <button
+              id="send-button"
+              onclick="sendClicked(document.getElementById('userInput').value)"
+              class="send-button"
+            >
+              Verstuur
+            </button>
           </div>
         </div>
-    </main>
+      </div>
+
+      <script src="../js/ai.js"></script>
+      <!-- Link to external JavaScript file -->
+    </div>
     <footer class="footer">
       <p>&copy; 2025 Gti Beveren. All rights reserved.</p>
       <p>
