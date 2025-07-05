@@ -437,6 +437,140 @@ body {
   }
 }
 
+/* Typing indicator styles */
+.typing-indicator {
+  display: flex !important;
+  align-items: center;
+  padding: 10px 15px;
+  margin: 10px 0;
+  background-color: rgba(34, 139, 34, 0.1);
+  border-radius: 15px;
+  border: 1px solid rgba(34, 139, 34, 0.3);
+  color: #22c55e;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+.typing-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.typing-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #888;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes typing {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* Persistent typing indicator that stays during generation */
+.typing-indicator-persistent {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  margin: 5px 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.typing-text {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
+
+.response-content {
+  margin-top: 5px;
+}
+
+/* Background loading animation for generating text */
+.ai-response.generating {
+  position: relative;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ai-response.generating::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    transparent 30%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    transparent 70%
+  );
+  background-size: 300% 300%;
+  animation: wave 3s infinite;
+  border-radius: 15px;
+  pointer-events: none;
+}
+
+.ai-response.generating .response-content {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes wave {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
 @media screen and (max-width: 1024px) {
   .ai .modal {
     width: 70%;

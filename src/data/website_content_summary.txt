@@ -1,0 +1,160 @@
+=== WEBSITE CONTENT SUMMARY - GTI BEVEREN 5ADB ===
+Laatste update: 2025
+
+=== ALGEMENE INFORMATIE ===
+Website: 5ADB - Applicatie- en Databeheer
+School: GTI Beveren (Gemeentelijk Technisch Instituut Beveren)
+Richting: Applicatie- en Databeheer (ADB)
+Ontwikkelaars: Alexander Brands, Robbe Ghyssaert, Tommy Banasiak, Jason Van Landeghem, Clément Vercauteren, Matisse De Keersmaeker, Jorne Duym
+
+=== WEBSITE STRUCTUUR ===
+Hoofdpagina's:
+- Home (home.html) - Startpagina met introductie
+- Lessenpakket (Lessenpakket.html) - Overzicht van vakken 5ADB en 6ADB
+- Foto's (Foto.html) - Fotogalerij van de school en leerlingen
+- Over ADB (About.html) - Uitgebreide informatie over de richting
+- Wat na 5ADB (Watna.html) - Vervolgmogelijkheden na het diploma
+- Over AI (overAI.html) - Informatie over kunstmatige intelligentie
+- Formulier (formulier.html) - Contactformulier voor vragen
+
+Vakspecifieke pagina's:
+- Webdesign.html - Informatie over het vak Webdesign
+- Programmeren.html - Informatie over Programmeren en Databeheer
+- Applicatiebeheer.html - Informatie over Applicatiebeheer
+- Computersystemen.html - Informatie over Computersystemen
+- Computernetwerken.html - Informatie over Computernetwerken
+
+=== OVER APPLICATIE- EN DATABEHEER (ADB) ===
+
+Wat is ADB?
+Applicatie- en Databeheer is een technische opleiding binnen de dubbele finaliteit, gericht op software- en hardwareaspecten van informatica. De richting combineert theoretische kennis met praktische vaardigheden voor een grondig inzicht in de IT-wereld.
+
+Leerinhoud:
+- Applicaties analyseren, programmeren en testen
+- Databanken ontwerpen en beheren
+- Websites ontwerpen en programmeren (HTML, CSS, JavaScript)
+- Computersystemen begrijpen (hardware en software niveau)
+- Netwerken uittekenen en configureren
+
+Leerlingenprofiel:
+- Interesse in informatica en ICT
+- Willen eigen programma's ontwikkelen
+- ICT-problemen zien als uitdagingen
+- Theorie direct in praktijk willen toepassen
+- Gedisciplineerd en gemotiveerd voor theoretische vakken
+- Bereid tot geïntegreerd eindproject in 6de jaar
+
+=== LESSENPAKKET ===
+
+BASISVORMING 5DE JAAR:
+- Aardrijkskunde: 1 uur/week
+- Engels: 2 uur/week
+- Frans: 3 uur/week
+- Geschiedenis: 1 uur/week
+- Levensbeschouwelijk vak: 2 uur/week
+- Lichamelijke opvoeding: 2 uur/week
+- Nederlands: 2 uur/week
+- Wiskunde: 3 uur/week
+- Natuurwetenschappen: 1 uur/week
+- Economie: 0 uur/week
+
+SPECIFIEK GEDEELTE 5DE JAAR:
+- Webdesign: 4 uur/week
+- Computersystemen en netwerken: 4 uur/week
+- Applicatiebeheer: 2 uur/week
+- Programmeren en databeheer: 8 uur/week
+
+BASISVORMING 6DE JAAR:
+- Aardrijkskunde: 1 uur/week
+- Engels: 2 uur/week
+- Frans: 3 uur/week
+- Geschiedenis: 1 uur/week
+- Levensbeschouwelijk vak: 2 uur/week
+- Lichamelijke opvoeding: 2 uur/week
+- Nederlands: 2 uur/week
+- Wiskunde: 2 uur/week
+- Natuurwetenschappen: 1 uur/week
+- Economie: 1 uur/week
+
+SPECIFIEK GEDEELTE 6DE JAAR:
+- Webdesign: 4 uur/week
+- Computersystemen en netwerken: 4 uur/week
+- Applicatiebeheer: 2 uur/week
+- Programmeren en databeheer: 8 uur/week
+
+STAGES:
+- 5de jaar: 0 weken stage
+- 6de jaar: 2 weken stage (voltijds project met bedrijfsleven)
+
+=== VAKINHOUD DETAILS ===
+
+WEBDESIGN (4 uur/week):
+Websites leren maken op basis van HTML, CSS en een beetje JavaScript. Focus op gebruiksvriendelijke en functionele websites, inclusief koppeling aan databanken.
+
+PROGRAMMEREN EN DATABEHEER (8 uur/week):
+- Leren programmeren in C#
+- Later in het jaar: databases maken en aanspreken
+- Ontwikkelen van softwaretoepassingen
+- Zorgen voor optimale werking van applicaties
+
+APPLICATIEBEHEER (2 uur/week):
+Leren werken met bepaalde applicaties. Focus op het analyseren, programmeren en testen van applicaties.
+
+COMPUTERSYSTEMEN EN NETWERKEN (4 uur/week):
+- Werking van computers leren op hardware niveau
+- Software niveau met bijbehorende praktijkopdrachten
+- Netwerken uittekenen en configureren
+- Inzicht in opbouw en werking van computersystemen
+
+=== NA HET 6DE JAAR ===
+
+Diploma:
+- Diploma secundair onderwijs
+- Beroepskwalificatie van functioneel digitaal ondersteuner
+
+Vervolgmogelijkheden:
+1. Hoger onderwijs:
+   - Professionele bachelor Informatica
+   - Professionele bachelor Toegepaste Informatica
+   - Professionele bachelor Multimedia en Communicatietechnologie
+   - Andere professionele bachelors
+
+2. Graduaatsopleiding
+
+3. Arbeidsmarkt:
+   - Webdeveloper
+   - Systeembeheerder
+   - IT-consultant
+   - Functie in bedrijfsprocessen optimalisatie
+   - Softwareontwikkeling
+
+=== SCHOOL INFORMATIE ===
+Naam: GTI Beveren (Gemeentelijk Technisch Instituut Beveren)
+Richting: Applicatie- en Databeheer (ADB)
+Niveau: Technisch onderwijs - dubbele finaliteit
+Focus: Software- en hardwareaspecten informatica
+
+=== PROJECTEN EN EINDWERK ===
+6de jaar: Geïntegreerd eindproject met begeleiding van leerkracht-coach
+Stage: 4 weken in tweede helft schooljaar (6de jaar)
+Samenwerking: Projecten in samenwerking met het bedrijfsleven
+
+=== VAARDIGHEDEN DIE WORDEN ONTWIKKELD ===
+- Programmeren (vooral C#)
+- Databasebeheer en -ontwerp
+- Webontwikkeling (HTML, CSS, JavaScript)
+- Computernetwerken configureren
+- Systeembeheer
+- Probleemoplossend denken in ICT-context
+- Projectmatig werken
+- Samenwerking met bedrijfsleven
+
+=== TECHNISCHE FOCUS ===
+- Software-ontwikkeling
+- Database-management
+- Webdesign en -ontwikkeling
+- Netwerkbeheer
+- Systeemonderhoud
+- IT-consultancy vaardigheden
+
+Deze informatie vormt de basis voor alle vragen over GTI Beveren en de richting Applicatie- en Databeheer.
